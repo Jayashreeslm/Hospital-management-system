@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+
+{% block title %}Database Schema{% endblock %}
+
+{% block page_title %}Database Schema{% endblock %}
+
+{% block content %}
+<style>
+    /* ER Diagram Styles */
+    .er-diagram {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        justify-content: center;
+        padding: 30px 20px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    .er-entity {
+        background: #fff;
+        border: 2px solid #3498db;
+        border-radius: 10px;
+        min-width: 200px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        overflow: hidden;
+        transition: transform 0.2s;
+    }
+    .er-entity:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    }
+    .er-entity-header {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: #fff;
+        padding: 10px 14px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-align: center;
+    }
+    .er-entity-header i {
+        margin-right: 6px;
+    }
+    .er-entity-body {
+        padding: 10px 14px;
+        font-size: 0.82rem;
+    }
+    .er-entity-body .pk {
+        color: #e74c3c;
+        font-weight: 700;
+    }
+    .er-entity-body .fk {
+        color: #8e44ad;
+        font-weight: 600;
+    }
+    .er-entity-body ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .er-entity-body ul li {
+        padding: 3px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .er-entity-body ul li:last-child {
+        border-bottom: none;
+    }
+    .relationship-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+    }
+    .relationship-item {
+        background: #f8f9fa;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border-left: 4px solid #8e44ad;
+        font-size: 0.92rem;
+    }
+    .relationship-item strong {
+        color: #2c3e50;
+    }
+    .sql-block {
+        background: #1e1e2e;
+        color: #cdd6f4;
+        padding: 16px;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 0.88rem;
+        line-height: 1.5;
+    }
+</style>
+
+<!-- ═══════════ ER DIAGRAM ═══════════ -->
+<div class="card" style="margin-bottom:28px;">
+    <div class="card-header">
+        <h3><i class="fas fa-project-diagram"></i> Entity-Relationship Diagram</h3>
+    </div>
+    <div class="card-body">
+        <div class="er-diagram">
+            <!-- Patient -->
+            <div class="er-entity">
+                <div class="er-entity-header"><i class="fas fa-user-injured"></i> Patient</div>
+                <div class="er-entity-body">
+                    <ul>
+                        <li><span class="pk">🔑 Patient_ID</span> (PK)</li>
+                        <li>Name</li>
+                        <li>DOB</li>
+                        <li>Gender</li>
+                        <li>Phone</li>
+                        <li>Address</li>
+                        <li>Blood_Group</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Doctor -->
+            <div class="er-entity">
+                <div class="er-entity-header"><i class="fas fa-user-md"></i> Doctor</div>
+                <div class="er-entity-body">
+                    <ul>
+                        <li><span class="pk">🔑 Doctor_ID</span> (PK)</li>
+                        <li>Name</li>
+                        <li>Specialization</li>
+                        <li>Phone</li>
+                        <li>Email</li>
+                        <li><span class="fk">🔗 Department_ID</span> (FK)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Department -->
+            <div class="er-entity">
+                <div class="er-entity-header"><i class="fas fa-building"></i> Department</div>
+                <div class="er-entity-body">
+                    <ul>
+                        <li><span class="pk">🔑 Department_ID</span> (PK)</li>
+                        <li>Name</li>
+                        <li>Location</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Appointment -->
+            <div class="er-entity">
+                <div class="er-entity-header"><i class="fas fa-calendar-check"></i> Appointment</div>
+                <div class="er-entity-body">
+                    <ul>
+                        <li><span class="pk">🔑 Appointment_ID</span> (PK)</li>
+                        <li><span class="fk">🔗 Patient_ID</span> (FK)</li>
+                        <li><span class="fk">🔗 Doctor_ID</span> (FK)</li>
+                        <li>DateTime</li>
+                        <li>Status</li>
+                        <li>Notes</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Medical Record -->
+            <div class="er-entity">
+                <div class="er-entity-header"><i class="fas fa-file-medical"></i> Medical_Record</div>
+                <div class="er-entity-body">
+                    <ul>
+                        <li><span class="pk">🔑 Record_ID</span> (PK)</li>
+                        <li><span class="fk">🔗 Patient_ID</span> (FK)</li>
+                        <li><span class="fk">🔗 Doctor_ID</span> (FK)</li>
+                        <li>Diagnosis</li>
+                        <li>Treatment</li>
+                        <li>Date</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Prescription -->
+            <div class="er-entity">
+                <div class="er-entity-header"><i class="fas fa-prescription"></i> Prescription</div>
+                <div class="er-entity-body">
+                    <ul>
+                        <li><span class="pk">🔑 Prescription_ID</span> (PK)</li>
+                        <li><span class="fk">🔗 Record_ID</span> (FK)</li>
+                        <li>Medication</li>
+                        <li>Dosage</li>
+                        <li>Duration</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Billing -->
+            <div class="er-entity">
+                <div class="er-entity-header"><i class="fas fa-file-invoice-dollar"></i> Billing</div>
+                <div class="er-entity-body">
+                    <ul>
+                        <li><span class="pk">🔑 Bill_ID</span> (PK)</li>
+                        <li><span class="fk">🔗 Patient_ID</span> (FK)</li>
+                        <li>Amount</li>
+                        <li>Date</li>
+                        <li>Status</li>
+                        <li>Description</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Room -->
+            <div class="er-entity">
+                <div class="er-entity-header"><i class="fas fa-bed"></i> Room</div>
+                <div class="er-entity-body">
+                    <ul>
+                        <li><span class="pk">🔑 Room_ID</span> (PK)</li>
+                        <li>Room_Number</li>
+                        <li>Type</li>
+                        <li>Status</li>
+                        <li><span class="fk">🔗 Patient_ID</span> (FK)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Relationships -->
+        <h4 style="margin-top:20px;color:#2c3e50;"><i class="fas fa-arrows-alt-h" style="color:#8e44ad;"></i> Relationships</h4>
+        <div class="relationship-list">
+            <div class="relationship-item">
+                <strong>Patient → Appointment</strong><br>
+                One patient can have many appointments <em>(1 : N)</em>
+            </div>
+            <div class="relationship-item">
+                <strong>Doctor → Appointment</strong><br>
+                One doctor can have many appointments <em>(1 : N)</em>
+            </div>
+            <div class="relationship-item">
+                <strong>Department → Doctor</strong><br>
+                One department can have many doctors <em>(1 : N)</em>
+            </div>
+            <div class="relationship-item">
+                <strong>Patient → Medical_Record</strong><br>
+                One patient can have many medical records <em>(1 : N)</em>
+            </div>
+            <div class="relationship-item">
+                <strong>Doctor → Medical_Record</strong><br>
+                One doctor can author many records <em>(1 : N)</em>
+            </div>
+            <div class="relationship-item">
+                <strong>Medical_Record → Prescription</strong><br>
+                One record can have many prescriptions <em>(1 : N)</em>
+            </div>
+            <div class="relationship-item">
+                <strong>Patient → Billing</strong><br>
+                One patient can have many bills <em>(1 : N)</em>
+            </div>
+            <div class="relationship-item">
+                <strong>Patient → Room</strong><br>
+                One patient may occupy one room <em>(1 : 1)</em>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ TABLES ═══════════ -->
+<div class="card" style="margin-bottom:28px;">
+    <div class="card-header">
+        <h3><i class="fas fa-table"></i> Table Definitions</h3>
+    </div>
+    <div class="card-body">
+        {% for table in tables %}
+        <div style="margin-bottom:24px;">
+            <h4 style="color:#2c3e50;margin-bottom:8px;">
+                <i class="fas fa-th-list" style="color:#3498db;"></i> {{ table.name }}
+            </h4>
+            <pre class="sql-block"><code>{{ table.sql }}</code></pre>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ═══════════ INDEXES ═══════════ -->
+<div class="card" style="margin-bottom:28px;">
+    <div class="card-header">
+        <h3><i class="fas fa-bolt"></i> Indexes</h3>
+    </div>
+    <div class="card-body">
+        {% if indexes %}
+        <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>Index Name</th>
+                        <th>Table</th>
+                        <th>SQL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for idx in indexes %}
+                    <tr>
+                        <td><code>{{ idx.name }}</code></td>
+                        <td>{{ idx.table }}</td>
+                        <td><code style="font-size:0.85rem;">{{ idx.sql or 'Auto-created' }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-info-circle"></i>
+            <p>No custom indexes found.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ═══════════ FOREIGN KEYS ═══════════ -->
+<div class="card" style="margin-bottom:28px;">
+    <div class="card-header">
+        <h3><i class="fas fa-key"></i> Foreign Key Relationships</h3>
+    </div>
+    <div class="card-body">
+        <ul style="list-style:none;padding:0;">
+            <li style="padding:8px 0;border-bottom:1px solid #eee;">
+                <i class="fas fa-long-arrow-alt-right" style="color:#8e44ad;"></i>
+                <strong>Appointment.Patient_ID</strong> → <strong>Patient.Patient_ID</strong>
+            </li>
+            <li style="padding:8px 0;border-bottom:1px solid #eee;">
+                <i class="fas fa-long-arrow-alt-right" style="color:#8e44ad;"></i>
+                <strong>Appointment.Doctor_ID</strong> → <strong>Doctor.Doctor_ID</strong>
+            </li>
+            <li style="padding:8px 0;border-bottom:1px solid #eee;">
+                <i class="fas fa-long-arrow-alt-right" style="color:#8e44ad;"></i>
+                <strong>Doctor.Department_ID</strong> → <strong>Department.Department_ID</strong>
+            </li>
+            <li style="padding:8px 0;border-bottom:1px solid #eee;">
+                <i class="fas fa-long-arrow-alt-right" style="color:#8e44ad;"></i>
+                <strong>Medical_Record.Patient_ID</strong> → <strong>Patient.Patient_ID</strong>
+            </li>
+            <li style="padding:8px 0;border-bottom:1px solid #eee;">
+                <i class="fas fa-long-arrow-alt-right" style="color:#8e44ad;"></i>
+                <strong>Medical_Record.Doctor_ID</strong> → <strong>Doctor.Doctor_ID</strong>
+            </li>
+            <li style="padding:8px 0;border-bottom:1px solid #eee;">
+                <i class="fas fa-long-arrow-alt-right" style="color:#8e44ad;"></i>
+                <strong>Prescription.Record_ID</strong> → <strong>Medical_Record.Record_ID</strong>
+            </li>
+            <li style="padding:8px 0;border-bottom:1px solid #eee;">
+                <i class="fas fa-long-arrow-alt-right" style="color:#8e44ad;"></i>
+                <strong>Billing.Patient_ID</strong> → <strong>Patient.Patient_ID</strong>
+            </li>
+            <li style="padding:8px 0;">
+                <i class="fas fa-long-arrow-alt-right" style="color:#8e44ad;"></i>
+                <strong>Room.Patient_ID</strong> → <strong>Patient.Patient_ID</strong>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

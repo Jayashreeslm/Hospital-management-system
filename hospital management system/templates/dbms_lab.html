@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}DBMS Lab — SQL Demonstrations{% endblock %}
+
+{% block page_title %}DBMS Lab — SQL Demonstrations{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:24px;">
+    <div class="card-body">
+        <p style="font-size:1.05rem;color:#555;">
+            This page demonstrates <strong>DDL</strong> (Data Definition Language) and <strong>DML</strong> (Data Manipulation Language) operations
+            on the hospital management database. Each demo runs a real SQL statement against a temporary demonstration table and displays the result below.
+        </p>
+    </div>
+</div>
+
+<!-- ═══════════════ DDL SECTION ═══════════════ -->
+<h2 style="margin:28px 0 16px;color:#2c3e50;border-bottom:2px solid #3498db;padding-bottom:8px;">
+    <i class="fas fa-database"></i> DDL — Data Definition Language
+</h2>
+
+<!-- CREATE TABLE -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <h3><i class="fas fa-plus-circle" style="color:#27ae60;"></i> CREATE TABLE</h3>
+    </div>
+    <div class="card-body">
+        <pre style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;overflow-x:auto;"><code>CREATE TABLE IF NOT EXISTS Demo_Log (
+    Log_ID    INTEGER PRIMARY KEY AUTOINCREMENT,
+    Action    TEXT    NOT NULL,
+    Detail    TEXT,
+    Created   DATETIME DEFAULT CURRENT_TIMESTAMP
+);</code></pre>
+        <p style="margin-top:10px;color:#555;">
+            Creates a temporary <strong>Demo_Log</strong> table used by subsequent demonstrations.
+            The table stores an auto‑incrementing ID, an action label, a detail string, and a timestamp.
+        </p>
+        <button class="btn btn-primary" onclick="runDemo('ddl_create')">
+            <i class="fas fa-play"></i> Run Demo
+        </button>
+        <div id="result_ddl_create" style="margin-top:14px;"></div>
+    </div>
+</div>
+
+<!-- ALTER TABLE -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <h3><i class="fas fa-edit" style="color:#f39c12;"></i> ALTER TABLE</h3>
+    </div>
+    <div class="card-body">
+        <pre style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;overflow-x:auto;"><code>ALTER TABLE Demo_Log ADD COLUMN Status TEXT DEFAULT 'active';</code></pre>
+        <p style="margin-top:10px;color:#555;">
+            Adds a new <strong>Status</strong> column to the Demo_Log table with a default value of <code>'active'</code>.
+            This demonstrates how schemas can evolve without recreating the table.
+        </p>
+        <button class="btn btn-primary" onclick="runDemo('ddl_alter')">
+            <i class="fas fa-play"></i> Run Demo
+        </button>
+        <div id="result_ddl_alter" style="margin-top:14px;"></div>
+    </div>
+</div>
+
+<!-- ═══════════════ DML SECTION ═══════════════ -->
+<h2 style="margin:36px 0 16px;color:#2c3e50;border-bottom:2px solid #e74c3c;padding-bottom:8px;">
+    <i class="fas fa-pen-fancy"></i> DML — Data Manipulation Language
+</h2>
+
+<!-- INSERT -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <h3><i class="fas fa-plus" style="color:#27ae60;"></i> INSERT</h3>
+    </div>
+    <div class="card-body">
+        <pre style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;overflow-x:auto;"><code>INSERT INTO Demo_Log (Action, Detail)
+VALUES ('INSERT_TEST', 'Row inserted via DBMS Lab demo');</code></pre>
+        <p style="margin-top:10px;color:#555;">
+            Inserts a new row into Demo_Log. The <code>Log_ID</code> and <code>Created</code> columns are
+            populated automatically by the database engine.
+        </p>
+        <button class="btn btn-success" onclick="runDemo('dml_insert')">
+            <i class="fas fa-play"></i> Run Demo
+        </button>
+        <div id="result_dml_insert" style="margin-top:14px;"></div>
+    </div>
+</div>
+
+<!-- SELECT -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <h3><i class="fas fa-search" style="color:#3498db;"></i> SELECT</h3>
+    </div>
+    <div class="card-body">
+        <pre style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;overflow-x:auto;"><code>SELECT * FROM Demo_Log ORDER BY Log_ID DESC;</code></pre>
+        <p style="margin-top:10px;color:#555;">
+            Retrieves all rows from Demo_Log, ordered by ID descending so the newest entries appear first.
+        </p>
+        <button class="btn btn-primary" onclick="runDemo('dml_select')">
+            <i class="fas fa-play"></i> Run Demo
+        </button>
+        <div id="result_dml_select" style="margin-top:14px;"></div>
+    </div>
+</div>
+
+<!-- JOIN -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <h3><i class="fas fa-link" style="color:#8e44ad;"></i> JOIN</h3>
+    </div>
+    <div class="card-body">
+        <pre style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;overflow-x:auto;"><code>SELECT a.Appointment_ID, p.Name AS Patient, d.Name AS Doctor, a.DateTime
+FROM Appointment a
+INNER JOIN Patient p ON a.Patient_ID = p.Patient_ID
+INNER JOIN Doctor d  ON a.Doctor_ID  = d.Doctor_ID
+ORDER BY a.DateTime DESC
+LIMIT 10;</code></pre>
+        <p style="margin-top:10px;color:#555;">
+            Joins the <strong>Appointment</strong>, <strong>Patient</strong>, and <strong>Doctor</strong> tables to
+            produce a human‑readable list of recent appointments.
+        </p>
+        <button class="btn btn-primary" onclick="runDemo('dml_select_join')">
+            <i class="fas fa-play"></i> Run Demo
+        </button>
+        <div id="result_dml_select_join" style="margin-top:14px;"></div>
+    </div>
+</div>
+
+<!-- UPDATE -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <h3><i class="fas fa-sync-alt" style="color:#e67e22;"></i> UPDATE</h3>
+    </div>
+    <div class="card-body">
+        <pre style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;overflow-x:auto;"><code>UPDATE Demo_Log
+SET Detail = 'Updated by DBMS Lab demo', Status = 'modified'
+WHERE Action = 'INSERT_TEST';</code></pre>
+        <p style="margin-top:10px;color:#555;">
+            Updates all rows whose <code>Action</code> is <code>'INSERT_TEST'</code>, changing the detail text and
+            setting the status to <code>'modified'</code>.
+        </p>
+        <button class="btn btn-warning" onclick="runDemo('dml_update')">
+            <i class="fas fa-play"></i> Run Demo
+        </button>
+        <div id="result_dml_update" style="margin-top:14px;"></div>
+    </div>
+</div>
+
+<!-- DELETE -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <h3><i class="fas fa-trash-alt" style="color:#e74c3c;"></i> DELETE</h3>
+    </div>
+    <div class="card-body">
+        <pre style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;overflow-x:auto;"><code>DELETE FROM Demo_Log WHERE Action = 'INSERT_TEST';</code></pre>
+        <p style="margin-top:10px;color:#555;">
+            Removes all rows matching the <code>WHERE</code> condition. This is irreversible unless wrapped in a transaction with a rollback.
+        </p>
+        <button class="btn btn-danger" onclick="runDemo('dml_delete')">
+            <i class="fas fa-play"></i> Run Demo
+        </button>
+        <div id="result_dml_delete" style="margin-top:14px;"></div>
+    </div>
+</div>
+
+<!-- AGGREGATE -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <h3><i class="fas fa-chart-bar" style="color:#16a085;"></i> Aggregate (GROUP BY)</h3>
+    </div>
+    <div class="card-body">
+        <pre style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;overflow-x:auto;"><code>SELECT d.Name AS Doctor, d.Specialization,
+       COUNT(a.Appointment_ID) AS Total_Appointments
+FROM Doctor d
+LEFT JOIN Appointment a ON d.Doctor_ID = a.Doctor_ID
+GROUP BY d.Doctor_ID
+ORDER BY Total_Appointments DESC;</code></pre>
+        <p style="margin-top:10px;color:#555;">
+            Groups appointments by doctor and counts them, demonstrating the <code>GROUP BY</code> clause with an
+            aggregate function (<code>COUNT</code>).
+        </p>
+        <button class="btn btn-primary" onclick="runDemo('dml_aggregate')">
+            <i class="fas fa-play"></i> Run Demo
+        </button>
+        <div id="result_dml_aggregate" style="margin-top:14px;"></div>
+    </div>
+</div>
+
+<!-- SUBQUERY -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <h3><i class="fas fa-layer-group" style="color:#2980b9;"></i> Subquery</h3>
+    </div>
+    <div class="card-body">
+        <pre style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;overflow-x:auto;"><code>SELECT Name, Specialization
+FROM Doctor
+WHERE Doctor_ID IN (
+    SELECT Doctor_ID
+    FROM Appointment
+    GROUP BY Doctor_ID
+    HAVING COUNT(*) >= 1
+);</code></pre>
+        <p style="margin-top:10px;color:#555;">
+            Uses a subquery to find doctors who have at least one appointment. The inner query identifies
+            qualifying <code>Doctor_ID</code>s, and the outer query fetches their details.
+        </p>
+        <button class="btn btn-primary" onclick="runDemo('dml_subquery')">
+            <i class="fas fa-play"></i> Run Demo
+        </button>
+        <div id="result_dml_subquery" style="margin-top:14px;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function runDemo(demoId) {
+    const resultDiv = document.getElementById('result_' + demoId);
+    resultDiv.innerHTML = '<p style="color:#888;"><i class="fas fa-spinner fa-spin"></i> Running…</p>';
+
+    const formData = new FormData();
+    formData.append('demo_id', demoId);
+
+    fetch('/dbms-lab/run', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            resultDiv.innerHTML = '<div style="background:#fdecea;color:#c0392b;padding:12px;border-radius:6px;">' +
+                '<i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> ' + data.error + '</div>';
+            return;
+        }
+
+        if (data.rows && data.columns) {
+            let html = '<div style="overflow-x:auto;"><table class="data-table" style="width:100%;">';
+            html += '<thead><tr>';
+            data.columns.forEach(col => {
+                html += '<th>' + col + '</th>';
+            });
+            html += '</tr></thead><tbody>';
+            data.rows.forEach(row => {
+                html += '<tr>';
+                row.forEach(cell => {
+                    html += '<td>' + (cell !== null ? cell : '<em>NULL</em>') + '</td>';
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+            if (data.message) {
+                html += '<p style="color:#27ae60;margin-top:8px;"><i class="fas fa-check-circle"></i> ' + data.message + '</p>';
+            }
+            resultDiv.innerHTML = html;
+        } else if (data.message) {
+            resultDiv.innerHTML = '<div style="background:#eafaf1;color:#27ae60;padding:12px;border-radius:6px;">' +
+                '<i class="fas fa-check-circle"></i> ' + data.message + '</div>';
+        }
+    })
+    .catch(err => {
+        resultDiv.innerHTML = '<div style="background:#fdecea;color:#c0392b;padding:12px;border-radius:6px;">' +
+            '<i class="fas fa-exclamation-triangle"></i> Fetch error: ' + err.message + '</div>';
+    });
+}
+</script>
+{% endblock %}

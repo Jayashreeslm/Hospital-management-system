@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor Management{% endblock %}
+
+{% block page_title %}Doctor Management{% endblock %}
+
+{% block content %}
+<!-- Search and Filter Bar -->
+<div class="card">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('doctors') }}" class="filter-bar">
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" name="search" class="form-control" placeholder="Search doctors by name, phone, or ID..." value="{{ request.args.get('search', '') }}">
+                    </div>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <select name="specialization" class="form-control">
+                        <option value="">All Specializations</option>
+                        {% for spec in specializations %}
+                        <option value="{{ spec }}" {% if request.args.get('specialization') == spec %}selected{% endif %}>{{ spec }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Header with Add Button -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h3 style="margin: 0;"><i class="fas fa-user-md"></i> Doctor List</h3>
+    <button class="btn btn-primary" onclick="document.getElementById('addDoctorModal').style.display='flex'">
+        <i class="fas fa-plus"></i> Add Doctor
+    </button>
+</div>
+
+<!-- Doctors Table -->
+{% if doctors %}
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Doctor ID</th>
+                    <th>Name</th>
+                    <th>Specialization</th>
+                    <th>Phone</th>
+                    <th>Availability</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in doctors %}
+                <tr>
+                    <td>{{ d.Doctor_ID }}</td>
+                    <td>{{ d.Name }}</td>
+                    <td>{{ d.Specialization }}</td>
+                    <td>{{ d.Phone }}</td>
+                    <td>
+                        <span class="status-badge badge {% if d.Availability == 'Available' %}badge-success{% elif d.Availability == 'On Leave' %}badge-warning{% else %}badge-danger{% endif %}">
+                            {% if d.Availability == 'Available' %}
+                                <i class="fas fa-check-circle"></i>
+                            {% elif d.Availability == 'On Leave' %}
+                                <i class="fas fa-clock"></i>
+                            {% else %}
+                                <i class="fas fa-times-circle"></i>
+                            {% endif %}
+                            {{ d.Availability }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="document.getElementById('editDoctorModal{{ d.Doctor_ID }}').style.display='flex'" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('delete_doctor', doctor_id=d.Doctor_ID) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this doctor?')">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <i class="fas fa-user-md" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
+            <h3>No Doctors Found</h3>
+            <p>There are no doctors matching your criteria. Click "Add Doctor" to register a new doctor.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Add Doctor Modal -->
+<div class="modal" id="addDoctorModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-md"></i> Add New Doctor</h3>
+            <span class="close" onclick="document.getElementById('addDoctorModal').style.display='none'">&times;</span>
+        </div>
+        <form method="POST" action="{{ url_for('add_doctor') }}">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" class="form-control" placeholder="Enter doctor name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="specialization">Specialization</label>
+                        <input type="text" id="specialization" name="specialization" class="form-control" placeholder="e.g., Cardiology" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="text" id="phone" name="phone" class="form-control" placeholder="Enter phone number" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="availability">Availability</label>
+                    <select id="availability" name="availability" class="form-control" required>
+                        <option value="Available">Available</option>
+                        <option value="On Leave">On Leave</option>
+                        <option value="Unavailable">Unavailable</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('addDoctorModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Doctor</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Doctor Modals (one per doctor) -->
+{% for d in doctors %}
+<div class="modal" id="editDoctorModal{{ d.Doctor_ID }}">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-edit"></i> Edit Doctor</h3>
+            <span class="close" onclick="document.getElementById('editDoctorModal{{ d.Doctor_ID }}').style.display='none'">&times;</span>
+        </div>
+        <form method="POST" action="{{ url_for('edit_doctor', doctor_id=d.Doctor_ID) }}">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="edit_name_{{ d.Doctor_ID }}">Full Name</label>
+                    <input type="text" id="edit_name_{{ d.Doctor_ID }}" name="name" class="form-control" value="{{ d.Name }}" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_spec_{{ d.Doctor_ID }}">Specialization</label>
+                        <input type="text" id="edit_spec_{{ d.Doctor_ID }}" name="specialization" class="form-control" value="{{ d.Specialization }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_phone_{{ d.Doctor_ID }}">Phone Number</label>
+                        <input type="text" id="edit_phone_{{ d.Doctor_ID }}" name="phone" class="form-control" value="{{ d.Phone }}" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit_avail_{{ d.Doctor_ID }}">Availability</label>
+                    <select id="edit_avail_{{ d.Doctor_ID }}" name="availability" class="form-control" required>
+                        <option value="Available" {% if d.Availability == 'Available' %}selected{% endif %}>Available</option>
+                        <option value="On Leave" {% if d.Availability == 'On Leave' %}selected{% endif %}>On Leave</option>
+                        <option value="Unavailable" {% if d.Availability == 'Unavailable' %}selected{% endif %}>Unavailable</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('editDoctorModal{{ d.Doctor_ID }}').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Doctor</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Close modal when clicking outside
+    document.querySelectorAll('.modal').forEach(function(modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

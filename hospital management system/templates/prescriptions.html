@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Prescriptions{% endblock %}
+
+{% block page_title %}Prescriptions{% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+    <form method="GET" action="{{ url_for('prescriptions') }}" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <div class="search-bar" style="flex: 1; min-width: 200px;">
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" class="form-control" placeholder="Search prescriptions..." value="{{ request.args.get('search', '') }}">
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+    </form>
+</div>
+
+<div style="margin: 20px 0; text-align: right;">
+    <button class="btn btn-success" onclick="document.getElementById('addPrescriptionModal').style.display='flex'">
+        <i class="fas fa-plus"></i> Add Prescription
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-prescription-bottle-alt"></i> Prescriptions</h3>
+    </div>
+    <div class="card-body">
+        {% if prescriptions %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Prescription ID</th>
+                    <th>Patient</th>
+                    <th>Diagnosis</th>
+                    <th>Medicine</th>
+                    <th>Dosage</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in prescriptions %}
+                <tr>
+                    <td>{{ p.Prescription_ID }}</td>
+                    <td>{{ p.patient_name }}</td>
+                    <td>{{ p.Diagnosis }}</td>
+                    <td>{{ p.Medicine_Name }}</td>
+                    <td>{{ p.Dosage }}</td>
+                    <td>{{ p.Duration }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-prescription" style="font-size: 3rem; margin-bottom: 15px; color: #ccc;"></i>
+            <h3>No Prescriptions Found</h3>
+            <p>There are no prescriptions matching your search. Click "Add Prescription" to create one.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Prescription Modal -->
+<div class="modal" id="addPrescriptionModal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-prescription-bottle-alt"></i> Add Prescription</h3>
+            <span class="close" onclick="document.getElementById('addPrescriptionModal').style.display='none'">&times;</span>
+        </div>
+        <form method="POST" action="{{ url_for('add_prescription') }}">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="record_id">Medical Record</label>
+                    <select name="record_id" id="record_id" class="form-control" required>
+                        <option value="">Select Medical Record</option>
+                        {% for record in records %}
+                        <option value="{{ record.Record_ID }}">Record #{{ record.Record_ID }} - {{ record.patient_name }} - {{ record.Diagnosis }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="medicine_id">Medicine</label>
+                    <select name="medicine_id" id="medicine_id" class="form-control" required>
+                        <option value="">Select Medicine</option>
+                        {% for medicine in medicines %}
+                        <option value="{{ medicine.Medicine_ID }}">{{ medicine.Name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dosage">Dosage</label>
+                        <input type="text" name="dosage" id="dosage" class="form-control" placeholder="e.g., 500mg twice daily" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="duration">Duration</label>
+                        <input type="text" name="duration" id="duration" class="form-control" placeholder="e.g., 7 days" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="document.getElementById('addPrescriptionModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Save Prescription</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Close modal when clicking outside
+    document.getElementById('addPrescriptionModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Medical Records{% endblock %}
+
+{% block page_title %}Medical Records{% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+    <form method="GET" action="{{ url_for('medical_records') }}" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <div class="search-bar" style="flex: 1; min-width: 200px;">
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" class="form-control" placeholder="Search medical records..." value="{{ request.args.get('search', '') }}">
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+    </form>
+</div>
+
+<div style="margin: 20px 0; text-align: right;">
+    <button class="btn btn-success" onclick="document.getElementById('addRecordModal').style.display='flex'">
+        <i class="fas fa-plus"></i> Add Record
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-file-medical"></i> Medical Records</h3>
+    </div>
+    <div class="card-body">
+        {% if records %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Record ID</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Diagnosis</th>
+                    <th>Treatment</th>
+                    <th>Record Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td>{{ r.Record_ID }}</td>
+                    <td>{{ r.patient_name }}</td>
+                    <td>{{ r.doctor_name }}</td>
+                    <td>{{ r.Diagnosis }}</td>
+                    <td>{{ r.Treatment }}</td>
+                    <td>{{ r.Record_Date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-notes-medical" style="font-size: 3rem; margin-bottom: 15px; color: #ccc;"></i>
+            <h3>No Medical Records Found</h3>
+            <p>There are no medical records matching your search. Click "Add Record" to create one.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Medical Record Modal -->
+<div class="modal" id="addRecordModal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-file-medical"></i> Add Medical Record</h3>
+            <span class="close" onclick="document.getElementById('addRecordModal').style.display='none'">&times;</span>
+        </div>
+        <form method="POST" action="{{ url_for('add_medical_record') }}">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="patient_id">Patient</label>
+                    <select name="patient_id" id="patient_id" class="form-control" required>
+                        <option value="">Select Patient</option>
+                        {% for patient in patients %}
+                        <option value="{{ patient.Patient_ID }}">{{ patient.Patient_ID }} - {{ patient.Name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="doctor_id">Doctor</label>
+                    <select name="doctor_id" id="doctor_id" class="form-control" required>
+                        <option value="">Select Doctor</option>
+                        {% for doctor in doctors %}
+                        <option value="{{ doctor.Doctor_ID }}">{{ doctor.Doctor_ID }} - {{ doctor.Name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="diagnosis">Diagnosis</label>
+                    <textarea name="diagnosis" id="diagnosis" class="form-control" rows="3" placeholder="Enter diagnosis..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="treatment">Treatment</label>
+                    <textarea name="treatment" id="treatment" class="form-control" rows="3" placeholder="Enter treatment plan..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="record_date">Record Date</label>
+                    <input type="date" name="record_date" id="record_date" class="form-control" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="document.getElementById('addRecordModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Save Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Close modal when clicking outside
+    document.getElementById('addRecordModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

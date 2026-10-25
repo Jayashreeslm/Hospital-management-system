@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — HMS{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stat Cards -->
+<div class="stat-cards">
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #3182ce, #63b3ed);">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-card-info">
+            <h3>{{ stats.total_patients }}</h3>
+            <p>Total Patients</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #38a169, #68d391);">
+            <i class="fas fa-user-md"></i>
+        </div>
+        <div class="stat-card-info">
+            <h3>{{ stats.total_doctors }}</h3>
+            <p>Total Doctors</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #d69e2e, #f6e05e);">
+            <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="stat-card-info">
+            <h3>{{ stats.today_appointments }}</h3>
+            <p>Today's Appointments</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #805ad5, #b794f4);">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-card-info">
+            <h3>{{ stats.completed_appointments }}</h3>
+            <p>Completed</p>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Grid -->
+<div class="dashboard-grid">
+    <!-- Appointment Status Summary -->
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-chart-pie"></i> Appointment Status Summary</h2>
+        </div>
+        <div class="card-body">
+            {% if status_summary %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in status_summary %}
+                    <tr>
+                        <td>
+                            {% if row.Status == 'Completed' %}
+                                <span class="badge badge-success">{{ row.Status }}</span>
+                            {% elif row.Status == 'Scheduled' %}
+                                <span class="badge badge-info">{{ row.Status }}</span>
+                            {% elif row.Status == 'Cancelled' %}
+                                <span class="badge badge-danger">{{ row.Status }}</span>
+                            {% elif row.Status == 'Pending' %}
+                                <span class="badge badge-warning">{{ row.Status }}</span>
+                            {% else %}
+                                <span class="badge">{{ row.Status }}</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ row.cnt }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <p>No appointment data available.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Appointments -->
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-calendar-alt"></i> Recent Appointments</h2>
+        </div>
+        <div class="card-body">
+            {% if recent_appointments %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Date & Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in recent_appointments %}
+                        <tr>
+                            <td><strong>#{{ appt.Appointment_ID }}</strong></td>
+                            <td>
+                                <i class="fas fa-user text-muted"></i>
+                                {{ appt.patient_name }}
+                            </td>
+                            <td>
+                                <i class="fas fa-user-md text-muted"></i>
+                                {{ appt.doctor_name }}
+                            </td>
+                            <td>
+                                <i class="fas fa-clock text-muted"></i>
+                                {{ appt.DateTime }}
+                            </td>
+                            <td>
+                                {% if appt.Status == 'Completed' %}
+                                    <span class="badge badge-success">{{ appt.Status }}</span>
+                                {% elif appt.Status == 'Scheduled' %}
+                                    <span class="badge badge-info">{{ appt.Status }}</span>
+                                {% elif appt.Status == 'Cancelled' %}
+                                    <span class="badge badge-danger">{{ appt.Status }}</span>
+                                {% elif appt.Status == 'Pending' %}
+                                    <span class="badge badge-warning">{{ appt.Status }}</span>
+                                {% else %}
+                                    <span class="badge">{{ appt.Status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <p>No recent appointments found.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Patients -->
+    <div class="card">
+        <div class="card-header">
+            <h2><i class="fas fa-procedures"></i> Recent Patients</h2>
+        </div>
+        <div class="card-body">
+            {% if recent_patients %}
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Patient ID</th>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>Gender</th>
+                            <th>Phone</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in recent_patients %}
+                        <tr>
+                            <td><strong>#{{ patient.Patient_ID }}</strong></td>
+                            <td>
+                                <i class="fas fa-user text-muted"></i>
+                                {{ patient.Name }}
+                            </td>
+                            <td>{{ patient.Age }}</td>
+                            <td>
+                                {% if patient.Gender == 'Male' %}
+                                    <i class="fas fa-mars" style="color: #3182ce;"></i>
+                                {% elif patient.Gender == 'Female' %}
+                                    <i class="fas fa-venus" style="color: #d53f8c;"></i>
+                                {% else %}
+                                    <i class="fas fa-genderless"></i>
+                                {% endif %}
+                                {{ patient.Gender }}
+                            </td>
+                            <td>
+                                <i class="fas fa-phone text-muted"></i>
+                                {{ patient.Phone }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-user-plus"></i>
+                <p>No patients registered yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-top: 24px;
+    }
+
+    .dashboard-grid .card:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .stat-card-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .stat-card-icon i {
+        font-size: 24px;
+        color: #fff;
+    }
+
+    .stat-card-info h3 {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0;
+        color: #1a202c;
+    }
+
+    .stat-card-info p {
+        font-size: 13px;
+        color: #718096;
+        margin: 4px 0 0;
+    }
+
+    .text-muted {
+        color: #a0aec0;
+        margin-right: 4px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

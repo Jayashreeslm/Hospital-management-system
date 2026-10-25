@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Medicine Management{% endblock %}
+
+{% block page_title %}Medicine Management{% endblock %}
+
+{% block content %}
+<div class="search-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <input type="text" id="searchInput" class="form-control" placeholder="Search medicines..." onkeyup="searchTable()" style="max-width: 400px;">
+    <button class="btn btn-primary" onclick="document.getElementById('addModal').style.display='flex'">
+        <i class="fas fa-plus"></i> Add Medicine
+    </button>
+</div>
+
+{% if medicines %}
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-pills"></i> All Medicines</h3>
+    </div>
+    <div class="card-body">
+        <table class="data-table" id="medicineTable">
+            <thead>
+                <tr>
+                    <th>Medicine ID</th>
+                    <th>Medicine Name</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Expiry Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in medicines %}
+                <tr>
+                    <td>{{ m.Medicine_ID }}</td>
+                    <td>{{ m.Medicine_Name }}</td>
+                    <td>
+                        {{ m.Quantity }}
+                        {% if m.Quantity < 20 %}
+                            <span class="badge badge-danger">Low Stock</span>
+                        {% endif %}
+                    </td>
+                    <td>₹{{ "%.2f"|format(m.Price) }}</td>
+                    <td>{{ m.Expiry_Date }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="openEditModal('{{ m.Medicine_ID }}', '{{ m.Medicine_Name }}', '{{ m.Quantity }}', '{{ m.Price }}', '{{ m.Expiry_Date }}')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <form action="{{ url_for('delete_medicine', medicine_id=m.Medicine_ID) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this medicine?');">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="fas fa-pills" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
+    <h3>No Medicines Found</h3>
+    <p>Click "Add Medicine" to add your first medicine to the inventory.</p>
+</div>
+{% endif %}
+
+<!-- Add Medicine Modal -->
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus-circle"></i> Add Medicine</h3>
+            <span class="close" onclick="document.getElementById('addModal').style.display='none'">&times;</span>
+        </div>
+        <form action="{{ url_for('add_medicine') }}" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="name">Medicine Name</label>
+                    <input type="text" id="name" name="name" class="form-control" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quantity">Quantity</label>
+                        <input type="number" id="quantity" name="quantity" class="form-control" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="price">Price (₹)</label>
+                        <input type="number" id="price" name="price" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="expiry_date">Expiry Date</label>
+                    <input type="date" id="expiry_date" name="expiry_date" class="form-control" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="document.getElementById('addModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Save Medicine</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Medicine Modal -->
+<div class="modal" id="editModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit Medicine</h3>
+            <span class="close" onclick="document.getElementById('editModal').style.display='none'">&times;</span>
+        </div>
+        <form id="editForm" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="edit_name">Medicine Name</label>
+                    <input type="text" id="edit_name" name="name" class="form-control" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_quantity">Quantity</label>
+                        <input type="number" id="edit_quantity" name="quantity" class="form-control" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_price">Price (₹)</label>
+                        <input type="number" id="edit_price" name="price" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit_expiry_date">Expiry Date</label>
+                    <input type="date" id="edit_expiry_date" name="expiry_date" class="form-control" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Update Medicine</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function searchTable() {
+        var input = document.getElementById("searchInput").value.toLowerCase();
+        var rows = document.querySelectorAll("#medicineTable tbody tr");
+        rows.forEach(function(row) {
+            var text = row.textContent.toLowerCase();
+            row.style.display = text.includes(input) ? "" : "none";
+        });
+    }
+
+    function openEditModal(id, name, quantity, price, expiry_date) {
+        document.getElementById('editForm').action = '/edit_medicine/' + id;
+        document.getElementById('edit_name').value = name;
+        document.getElementById('edit_quantity').value = quantity;
+        document.getElementById('edit_price').value = price;
+        document.getElementById('edit_expiry_date').value = expiry_date;
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Hospital Management System{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+{% if session.get('user_id') %}
+<div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-hospital"></i>
+                <span>HMS</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
+            </a>
+            <div class="nav-section-title">Management</div>
+            <a href="{{ url_for('patients') }}" class="nav-link {% if request.endpoint in ['patients','view_patient'] %}active{% endif %}">
+                <i class="fas fa-user-injured"></i><span>Patients</span>
+            </a>
+            <a href="{{ url_for('doctors') }}" class="nav-link {% if request.endpoint == 'doctors' %}active{% endif %}">
+                <i class="fas fa-user-md"></i><span>Doctors</span>
+            </a>
+            <a href="{{ url_for('appointments') }}" class="nav-link {% if request.endpoint == 'appointments' %}active{% endif %}">
+                <i class="fas fa-calendar-check"></i><span>Appointments</span>
+            </a>
+            <a href="{{ url_for('medical_records') }}" class="nav-link {% if request.endpoint == 'medical_records' %}active{% endif %}">
+                <i class="fas fa-file-medical"></i><span>Medical Records</span>
+            </a>
+            <a href="{{ url_for('prescriptions') }}" class="nav-link {% if request.endpoint == 'prescriptions' %}active{% endif %}">
+                <i class="fas fa-prescription"></i><span>Prescriptions</span>
+            </a>
+            <a href="{{ url_for('medicines') }}" class="nav-link {% if request.endpoint == 'medicines' %}active{% endif %}">
+                <i class="fas fa-pills"></i><span>Medicines</span>
+            </a>
+            <a href="{{ url_for('billing') }}" class="nav-link {% if request.endpoint == 'billing' %}active{% endif %}">
+                <i class="fas fa-file-invoice-dollar"></i><span>Billing</span>
+            </a>
+            <a href="{{ url_for('insurance') }}" class="nav-link {% if request.endpoint == 'insurance' %}active{% endif %}">
+                <i class="fas fa-shield-alt"></i><span>Insurance</span>
+            </a>
+            <div class="nav-section-title">DBMS Concepts</div>
+            <a href="{{ url_for('dbms_lab') }}" class="nav-link {% if request.endpoint == 'dbms_lab' %}active{% endif %}">
+                <i class="fas fa-flask"></i><span>DBMS Lab</span>
+            </a>
+            <a href="{{ url_for('schema') }}" class="nav-link {% if request.endpoint == 'schema' %}active{% endif %}">
+                <i class="fas fa-database"></i><span>DB Schema</span>
+            </a>
+            <a href="{{ url_for('transactions') }}" class="nav-link {% if request.endpoint == 'transactions' %}active{% endif %}">
+                <i class="fas fa-exchange-alt"></i><span>Transactions</span>
+            </a>
+            <a href="{{ url_for('concurrency') }}" class="nav-link {% if request.endpoint == 'concurrency' %}active{% endif %}">
+                <i class="fas fa-lock"></i><span>Concurrency</span>
+            </a>
+            <a href="{{ url_for('raid') }}" class="nav-link {% if request.endpoint == 'raid' %}active{% endif %}">
+                <i class="fas fa-hdd"></i><span>RAID Storage</span>
+            </a>
+            <a href="{{ url_for('optimisation') }}" class="nav-link {% if request.endpoint == 'optimisation' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i><span>Query Optimisation</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span>{{ session.get('username', 'Admin') }}</span>
+            </div>
+            <a href="{{ url_for('logout') }}" class="nav-link logout-link">
+                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-bar">
+            <button class="mobile-toggle" id="mobileToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+            <div class="top-bar-right">
+                <span class="team-badge">Team 15 — DBMS Project</span>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+                {{ message }}
+                <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="content-area">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+{% else %}
+<div class="login-wrapper">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">{{ message }}
+            <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    {% block login_content %}{% endblock %}
+</div>
+{% endif %}
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

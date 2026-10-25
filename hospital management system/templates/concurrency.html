@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Concurrency Control{% endblock %}
+
+{% block page_title %}Concurrency Control{% endblock %}
+
+{% block content %}
+<!-- ═══════════ EXPLANATION ═══════════ -->
+<div class="card" style="margin-bottom:28px;">
+    <div class="card-header">
+        <h3><i class="fas fa-random"></i> What Is Concurrency Control?</h3>
+    </div>
+    <div class="card-body">
+        <p style="color:#555;line-height:1.7;">
+            In a multi‑user database, <strong>concurrency control</strong> ensures that simultaneous transactions
+            do not corrupt data. Common mechanisms include:
+        </p>
+        <ul style="color:#555;line-height:1.8;margin-top:10px;">
+            <li><strong>Locking</strong> — a transaction acquires a lock on a row or table, blocking others until it finishes.</li>
+            <li><strong>UNIQUE constraints</strong> — the database rejects a second INSERT/UPDATE that would create a duplicate value in a uniquely‑constrained column combination.</li>
+            <li><strong>Serializable isolation</strong> — transactions are ordered so the net effect is the same as running them one after another.</li>
+        </ul>
+
+        <div style="background:#fff3cd;border-left:4px solid #f39c12;padding:14px 18px;border-radius:6px;margin-top:18px;">
+            <p style="margin:0;color:#856404;">
+                <i class="fas fa-info-circle"></i>
+                <strong>Note:</strong> This is a controlled simulation. Both requests are executed <em>sequentially</em>
+                on the server to demonstrate the effect of database constraints. In a production system these would
+                arrive from separate client connections.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ DEMO FORM ═══════════ -->
+<div class="card" style="margin-bottom:28px;">
+    <div class="card-header">
+        <h3><i class="fas fa-flask"></i> Double‑Booking Simulation</h3>
+    </div>
+    <div class="card-body">
+        <p style="color:#555;margin-bottom:18px;">
+            Two patients attempt to book the <strong>same doctor at the same date &amp; time</strong>.
+            The database's UNIQUE constraint should allow the first request and reject the second.
+        </p>
+
+        <form id="concurrency-form">
+            <div class="form-row">
+                <div class="form-group" style="flex:1;min-width:200px;">
+                    <label for="doctor_id"><i class="fas fa-user-md"></i> Doctor</label>
+                    <select name="doctor_id" id="doctor_id" class="form-control" required>
+                        <option value="">— select doctor —</option>
+                        {% for d in doctors %}
+                        <option value="{{ d.Doctor_ID }}">{{ d.Name }} — {{ d.Specialization }} (ID {{ d.Doctor_ID }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1;min-width:200px;">
+                    <label for="patient_a"><i class="fas fa-user"></i> Patient A (Request 1)</label>
+                    <select name="patient_a" id="patient_a" class="form-control" required>
+                        <option value="">— select patient —</option>
+                        {% for p in patients %}
+                        <option value="{{ p.Patient_ID }}">{{ p.Name }} (ID {{ p.Patient_ID }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1;min-width:200px;">
+                    <label for="patient_b"><i class="fas fa-user"></i> Patient B (Request 2)</label>
+                    <select name="patient_b" id="patient_b" class="form-control" required>
+                        <option value="">— select patient —</option>
+                        {% for p in patients %}
+                        <option value="{{ p.Patient_ID }}">{{ p.Name }} (ID {{ p.Patient_ID }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1;min-width:180px;">
+                    <label for="date"><i class="fas fa-calendar-day"></i> Date</label>
+                    <input type="date" name="date" id="date" class="form-control" required>
+                </div>
+                <div class="form-group" style="flex:1;min-width:140px;">
+                    <label for="time"><i class="fas fa-clock"></i> Time</label>
+                    <input type="time" name="time" id="time" class="form-control" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-play"></i> Run Simulation
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Result Area -->
+<div id="concurrency-result"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('concurrency-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const resultDiv = document.getElementById('concurrency-result');
+    resultDiv.innerHTML = '<div class="card"><div class="card-body" style="text-align:center;color:#888;">' +
+        '<i class="fas fa-spinner fa-spin fa-2x"></i><p>Running simulation…</p></div></div>';
+
+    const formData = new FormData(this);
+
+    fetch('/concurrency/demo', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            resultDiv.innerHTML = '<div class="card" style="border-left:4px solid #e74c3c;">' +
+                '<div class="card-body"><i class="fas fa-exclamation-triangle" style="color:#e74c3c;"></i> ' +
+                '<strong>Error:</strong> ' + data.error + '</div></div>';
+            return;
+        }
+
+        let html = '';
+
+        /* ── Timeline ── */
+        html += '<div class="card" style="margin-bottom:20px;">';
+        html += '<div class="card-header"><h3><i class="fas fa-stream"></i> Execution Timeline</h3></div>';
+        html += '<div class="card-body">';
+
+        /* Request A */
+        if (data.request_a) {
+            html += '<h4 style="color:#3498db;margin-bottom:10px;"><i class="fas fa-arrow-right"></i> Request A</h4>';
+            data.request_a.forEach(function(step) {
+                let color = step.status === 'success' ? '#27ae60' : (step.status === 'error' ? '#e74c3c' : '#3498db');
+                let icon = step.status === 'success' ? 'fa-check-circle' : (step.status === 'error' ? 'fa-times-circle' : 'fa-info-circle');
+                html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0 8px 16px;border-left:3px solid ' + color + ';">';
+                html += '<i class="fas ' + icon + '" style="color:' + color + ';margin-top:3px;"></i>';
+                html += '<div><strong style="color:' + color + ';">' + step.title + '</strong>';
+                if (step.detail) html += '<p style="margin:2px 0 0;color:#555;font-size:0.9rem;">' + step.detail + '</p>';
+                if (step.sql) html += '<pre style="background:#1e1e2e;color:#cdd6f4;padding:8px;border-radius:6px;margin-top:4px;font-size:0.82rem;overflow-x:auto;"><code>' + step.sql + '</code></pre>';
+                html += '</div></div>';
+            });
+        }
+
+        html += '<hr style="margin:18px 0;">';
+
+        /* Request B */
+        if (data.request_b) {
+            html += '<h4 style="color:#e67e22;margin-bottom:10px;"><i class="fas fa-arrow-right"></i> Request B</h4>';
+            data.request_b.forEach(function(step) {
+                let color = step.status === 'success' ? '#27ae60' : (step.status === 'error' ? '#e74c3c' : '#e67e22');
+                let icon = step.status === 'success' ? 'fa-check-circle' : (step.status === 'error' ? 'fa-times-circle' : 'fa-info-circle');
+                html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0 8px 16px;border-left:3px solid ' + color + ';">';
+                html += '<i class="fas ' + icon + '" style="color:' + color + ';margin-top:3px;"></i>';
+                html += '<div><strong style="color:' + color + ';">' + step.title + '</strong>';
+                if (step.detail) html += '<p style="margin:2px 0 0;color:#555;font-size:0.9rem;">' + step.detail + '</p>';
+                if (step.sql) html += '<pre style="background:#1e1e2e;color:#cdd6f4;padding:8px;border-radius:6px;margin-top:4px;font-size:0.82rem;overflow-x:auto;"><code>' + step.sql + '</code></pre>';
+                html += '</div></div>';
+            });
+        }
+
+        html += '</div></div>';
+
+        /* ── Final Records ── */
+        if (data.final_records && data.final_records.columns && data.final_records.rows) {
+            html += '<div class="card">';
+            html += '<div class="card-header"><h3><i class="fas fa-database"></i> Final Records in Database</h3></div>';
+            html += '<div class="card-body"><div style="overflow-x:auto;"><table class="data-table" style="width:100%;">';
+            html += '<thead><tr>';
+            data.final_records.columns.forEach(function(col) {
+                html += '<th>' + col + '</th>';
+            });
+            html += '</tr></thead><tbody>';
+            data.final_records.rows.forEach(function(row) {
+                html += '<tr>';
+                row.forEach(function(cell) {
+                    html += '<td>' + (cell !== null ? cell : '<em>NULL</em>') + '</td>';
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div></div></div>';
+        }
+
+        resultDiv.innerHTML = html;
+    })
+    .catch(err => {
+        resultDiv.innerHTML = '<div class="card" style="border-left:4px solid #e74c3c;">' +
+            '<div class="card-body"><i class="fas fa-exclamation-triangle" style="color:#e74c3c;"></i> ' +
+            'Fetch error: ' + err.message + '</div></div>';
+    });
+});
+
+document.getElementById('date').valueAsDate = new Date();
+</script>
+{% endblock %}

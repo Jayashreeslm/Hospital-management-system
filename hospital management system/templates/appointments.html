@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Appointment Management{% endblock %}
+
+{% block page_title %}Appointment Management{% endblock %}
+
+{% block content %}
+<div class="filter-bar">
+    <form method="GET" action="{{ url_for('appointments') }}" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <div class="search-bar" style="flex: 1; min-width: 200px;">
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" class="form-control" placeholder="Search appointments..." value="{{ request.args.get('search', '') }}">
+        </div>
+        <select name="status" class="form-control" style="width: auto; min-width: 150px;">
+            <option value="">All Statuses</option>
+            <option value="Scheduled" {{ 'selected' if request.args.get('status') == 'Scheduled' }}>Scheduled</option>
+            <option value="Completed" {{ 'selected' if request.args.get('status') == 'Completed' }}>Completed</option>
+            <option value="Cancelled" {{ 'selected' if request.args.get('status') == 'Cancelled' }}>Cancelled</option>
+        </select>
+        <select name="doctor" class="form-control" style="width: auto; min-width: 180px;">
+            <option value="">All Doctors</option>
+            {% for doctor in doctors %}
+            <option value="{{ doctor.Doctor_ID }}" {{ 'selected' if request.args.get('doctor') == doctor.Doctor_ID|string }}>{{ doctor.Name }}</option>
+            {% endfor %}
+        </select>
+        <input type="date" name="date" class="form-control" style="width: auto;" value="{{ request.args.get('date', '') }}">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+    </form>
+</div>
+
+<div style="margin: 20px 0; text-align: right;">
+    <button class="btn btn-success" onclick="document.getElementById('bookModal').style.display='flex'">
+        <i class="fas fa-plus"></i> Book Appointment
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-calendar-check"></i> Appointments</h3>
+    </div>
+    <div class="card-body">
+        {% if appointments %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Date & Time</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in appointments %}
+                <tr>
+                    <td>{{ a.Appointment_ID }}</td>
+                    <td>{{ a.patient_name }}</td>
+                    <td>{{ a.doctor_name }}</td>
+                    <td>{{ a.DateTime }}</td>
+                    <td>
+                        {% if a.Status == 'Scheduled' %}
+                            <span class="badge badge-info">{{ a.Status }}</span>
+                        {% elif a.Status == 'Completed' %}
+                            <span class="badge badge-success">{{ a.Status }}</span>
+                        {% elif a.Status == 'Cancelled' %}
+                            <span class="badge badge-danger">{{ a.Status }}</span>
+                        {% else %}
+                            <span class="badge badge-warning">{{ a.Status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                            <form method="POST" action="{{ url_for('update_appointment_status', appt_id=a.Appointment_ID) }}" style="display: flex; gap: 5px; align-items: center;">
+                                <select name="status" class="form-control" style="width: auto; padding: 4px 8px; font-size: 0.85rem;">
+                                    <option value="Scheduled" {{ 'selected' if a.Status == 'Scheduled' }}>Scheduled</option>
+                                    <option value="Completed" {{ 'selected' if a.Status == 'Completed' }}>Completed</option>
+                                    <option value="Cancelled" {{ 'selected' if a.Status == 'Cancelled' }}>Cancelled</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-warning"><i class="fas fa-sync-alt"></i> Update</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('delete_appointment', appt_id=a.Appointment_ID) }}" onsubmit="return confirm('Are you sure you want to delete this appointment?');">
+                                <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 15px; color: #ccc;"></i>
+            <h3>No Appointments Found</h3>
+            <p>There are no appointments matching your criteria. Click "Book Appointment" to schedule one.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Book Appointment Modal -->
+<div class="modal" id="bookModal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-calendar-plus"></i> Book Appointment</h3>
+            <span class="close" onclick="document.getElementById('bookModal').style.display='none'">&times;</span>
+        </div>
+        <form method="POST" action="{{ url_for('add_appointment') }}">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="patient_id">Patient</label>
+                    <select name="patient_id" id="patient_id" class="form-control" required>
+                        <option value="">Select Patient</option>
+                        {% for patient in patients %}
+                        <option value="{{ patient.Patient_ID }}">{{ patient.Patient_ID }} - {{ patient.Name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="doctor_id">Doctor</label>
+                    <select name="doctor_id" id="doctor_id" class="form-control" required>
+                        <option value="">Select Doctor</option>
+                        {% for doctor in doctors %}
+                        <option value="{{ doctor.Doctor_ID }}">{{ doctor.Doctor_ID }} - {{ doctor.Name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date">Date</label>
+                        <input type="date" name="date" id="date" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="time">Time</label>
+                        <input type="time" name="time" id="time" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="document.getElementById('bookModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Book Appointment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Close modal when clicking outside
+    document.getElementById('bookModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

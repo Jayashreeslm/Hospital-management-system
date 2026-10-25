@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Insurance{% endblock %}
+
+{% block page_title %}Insurance{% endblock %}
+
+{% block content %}
+<div class="search-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <input type="text" id="searchInput" class="form-control" placeholder="Search insurance records..." onkeyup="searchTable()" style="max-width: 400px;">
+    <button class="btn btn-primary" onclick="document.getElementById('addModal').style.display='flex'">
+        <i class="fas fa-plus"></i> Add Insurance
+    </button>
+</div>
+
+{% if insurance_records %}
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-shield-alt"></i> All Insurance Records</h3>
+    </div>
+    <div class="card-body">
+        <table class="data-table" id="insuranceTable">
+            <thead>
+                <tr>
+                    <th>Insurance ID</th>
+                    <th>Patient Name</th>
+                    <th>Provider</th>
+                    <th>Policy Number</th>
+                    <th>Coverage Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in insurance_records %}
+                <tr>
+                    <td>{{ i.Insurance_ID }}</td>
+                    <td>{{ i.patient_name }}</td>
+                    <td>{{ i.Provider }}</td>
+                    <td>{{ i.Policy_Number }}</td>
+                    <td>₹{{ "%.2f"|format(i.Coverage_Amount) }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="openEditModal('{{ i.Insurance_ID }}', '{{ i.Patient_ID }}', '{{ i.Provider }}', '{{ i.Policy_Number }}', '{{ i.Coverage_Amount }}')">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <form action="{{ url_for('delete_insurance', insurance_id=i.Insurance_ID) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this insurance record?');">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="fas fa-shield-alt" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
+    <h3>No Insurance Records Found</h3>
+    <p>Click "Add Insurance" to add your first insurance record.</p>
+</div>
+{% endif %}
+
+<!-- Add Insurance Modal -->
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus-circle"></i> Add Insurance</h3>
+            <span class="close" onclick="document.getElementById('addModal').style.display='none'">&times;</span>
+        </div>
+        <form action="{{ url_for('add_insurance') }}" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="patient_id">Patient</label>
+                    <select id="patient_id" name="patient_id" class="form-control" required>
+                        <option value="">Select Patient</option>
+                        {% for p in patients %}
+                        <option value="{{ p.Patient_ID }}">{{ p.Patient_Name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="provider">Provider</label>
+                    <input type="text" id="provider" name="provider" class="form-control" placeholder="e.g. Star Health, ICICI Lombard" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="policy_number">Policy Number</label>
+                        <input type="text" id="policy_number" name="policy_number" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="coverage_amount">Coverage Amount (₹)</label>
+                        <input type="number" id="coverage_amount" name="coverage_amount" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="document.getElementById('addModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Save Insurance</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Insurance Modal -->
+<div class="modal" id="editModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit Insurance</h3>
+            <span class="close" onclick="document.getElementById('editModal').style.display='none'">&times;</span>
+        </div>
+        <form id="editForm" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="edit_patient_id">Patient</label>
+                    <select id="edit_patient_id" name="patient_id" class="form-control" required>
+                        <option value="">Select Patient</option>
+                        {% for p in patients %}
+                        <option value="{{ p.Patient_ID }}">{{ p.Patient_Name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit_provider">Provider</label>
+                    <input type="text" id="edit_provider" name="provider" class="form-control" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_policy_number">Policy Number</label>
+                        <input type="text" id="edit_policy_number" name="policy_number" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_coverage_amount">Coverage Amount (₹)</label>
+                        <input type="number" id="edit_coverage_amount" name="coverage_amount" class="form-control" step="0.01" min="0" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="document.getElementById('editModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Update Insurance</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function searchTable() {
+        var input = document.getElementById("searchInput").value.toLowerCase();
+        var rows = document.querySelectorAll("#insuranceTable tbody tr");
+        rows.forEach(function(row) {
+            var text = row.textContent.toLowerCase();
+            row.style.display = text.includes(input) ? "" : "none";
+        });
+    }
+
+    function openEditModal(id, patientId, provider, policyNumber, coverageAmount) {
+        document.getElementById('editForm').action = '/edit_insurance/' + id;
+        document.getElementById('edit_patient_id').value = patientId;
+        document.getElementById('edit_provider').value = provider;
+        document.getElementById('edit_policy_number').value = policyNumber;
+        document.getElementById('edit_coverage_amount').value = coverageAmount;
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Query Optimisation{% endblock %}
+
+{% block page_title %}Query Optimisation{% endblock %}
+
+{% block content %}
+<!-- ═══════════ BEFORE vs AFTER ═══════════ -->
+<div class="card" style="margin-bottom:28px;">
+    <div class="card-header">
+        <h3><i class="fas fa-exchange-alt"></i> Before vs After — Column Selection</h3>
+    </div>
+    <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:24px;">
+            <!-- BEFORE -->
+            <div class="card" style="border-left:5px solid #e74c3c;">
+                <div class="card-body">
+                    <h4 style="color:#e74c3c;margin-bottom:10px;">
+                        <i class="fas fa-times-circle"></i> Before (Inefficient)
+                    </h4>
+                    <pre style="background:#1e1e2e;color:#cdd6f4;padding:14px;border-radius:8px;overflow-x:auto;font-size:0.88rem;"><code>SELECT *
+FROM Appointment
+WHERE Patient_ID = 101;</code></pre>
+                    <p style="margin-top:12px;color:#555;font-size:0.92rem;">
+                        <code>SELECT *</code> retrieves <strong>every column</strong> from the table, including ones the
+                        application doesn't need. This wastes I/O bandwidth, memory, and network transfer —
+                        especially problematic when tables have many columns or large TEXT/BLOB fields.
+                    </p>
+                    <button class="btn btn-danger btn-sm" onclick="optimisationDemo('before_select_star')" style="margin-top:8px;">
+                        <i class="fas fa-play"></i> Run Before Query Plan
+                    </button>
+                    <div id="result_before_select_star" style="margin-top:12px;"></div>
+                </div>
+            </div>
+
+            <!-- AFTER -->
+            <div class="card" style="border-left:5px solid #27ae60;">
+                <div class="card-body">
+                    <h4 style="color:#27ae60;margin-bottom:10px;">
+                        <i class="fas fa-check-circle"></i> After (Optimised)
+                    </h4>
+                    <pre style="background:#1e1e2e;color:#cdd6f4;padding:14px;border-radius:8px;overflow-x:auto;font-size:0.88rem;"><code>SELECT Appointment_ID, Doctor_ID, DateTime
+FROM Appointment
+WHERE Patient_ID = 101;</code></pre>
+                    <p style="margin-top:12px;color:#555;font-size:0.92rem;">
+                        Listing only the <strong>required columns</strong> reduces the amount of data the engine must read
+                        and transfer. In combination with a covering index, the engine may satisfy the query entirely
+                        from the index without touching the table at all.
+                    </p>
+                    <button class="btn btn-success btn-sm" onclick="optimisationDemo('after_select_cols')" style="margin-top:8px;">
+                        <i class="fas fa-play"></i> Run After Query Plan
+                    </button>
+                    <div id="result_after_select_cols" style="margin-top:12px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ INDEX SECTION ═══════════ -->
+<div class="card" style="margin-bottom:28px;">
+    <div class="card-header">
+        <h3><i class="fas fa-bolt"></i> Index Optimisation</h3>
+    </div>
+    <div class="card-body">
+        <p style="color:#555;margin-bottom:14px;">
+            An index on the <code>Patient_ID</code> column of the <strong>Appointment</strong> table allows the
+            database engine to jump directly to matching rows instead of scanning every row (full table scan → index seek).
+        </p>
+        <pre style="background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.9rem;"><code>CREATE INDEX idx_appt_patient ON Appointment(Patient_ID);</code></pre>
+        <p style="margin-top:12px;color:#555;font-size:0.92rem;">
+            With this index in place, queries filtering on <code>Patient_ID</code> execute in <strong>O(log n)</strong>
+            time instead of <strong>O(n)</strong>. For a table with thousands of appointments, the difference is
+            dramatic.
+        </p>
+        <button class="btn btn-primary btn-sm" onclick="optimisationDemo('show_index')" style="margin-top:10px;">
+            <i class="fas fa-search"></i> Show Indexes
+        </button>
+        <div id="result_show_index" style="margin-top:14px;"></div>
+    </div>
+</div>
+
+<!-- ═══════════ TIMING COMPARISON ═══════════ -->
+<div class="card" style="margin-bottom:28px;">
+    <div class="card-header">
+        <h3><i class="fas fa-stopwatch"></i> Timing Comparison</h3>
+    </div>
+    <div class="card-body">
+        <p style="color:#555;margin-bottom:14px;">
+            Runs both the <em>before</em> and <em>after</em> queries multiple times, measures execution time, and
+            compares the results.
+        </p>
+        <button class="btn btn-warning" onclick="optimisationDemo('timing')">
+            <i class="fas fa-play"></i> Run Timing Comparison
+        </button>
+        <div id="result_timing" style="margin-top:14px;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function optimisationDemo(type) {
+    const resultDiv = document.getElementById('result_' + type);
+    resultDiv.innerHTML = '<p style="color:#888;"><i class="fas fa-spinner fa-spin"></i> Running…</p>';
+
+    const formData = new FormData();
+    formData.append('type', type);
+
+    fetch('/optimisation/demo', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            resultDiv.innerHTML = '<div style="background:#fdecea;color:#c0392b;padding:12px;border-radius:6px;">' +
+                '<i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> ' + data.error + '</div>';
+            return;
+        }
+
+        let html = '';
+
+        /* Query plan results (rows + columns) */
+        if (data.columns && data.rows) {
+            html += '<div style="overflow-x:auto;"><table class="data-table" style="width:100%;">';
+            html += '<thead><tr>';
+            data.columns.forEach(col => { html += '<th>' + col + '</th>'; });
+            html += '</tr></thead><tbody>';
+            data.rows.forEach(row => {
+                html += '<tr>';
+                row.forEach(cell => {
+                    html += '<td>' + (cell !== null ? cell : '<em>NULL</em>') + '</td>';
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+        }
+
+        /* Timing comparison */
+        if (data.timing) {
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px;">';
+
+            html += '<div style="background:#fdecea;padding:16px;border-radius:8px;text-align:center;">';
+            html += '<h5 style="color:#e74c3c;margin-bottom:6px;">Before (SELECT *)</h5>';
+            html += '<span style="font-size:1.6rem;font-weight:700;color:#c0392b;">' + data.timing.before_ms + ' ms</span>';
+            html += '</div>';
+
+            html += '<div style="background:#eafaf1;padding:16px;border-radius:8px;text-align:center;">';
+            html += '<h5 style="color:#27ae60;margin-bottom:6px;">After (Selected Cols)</h5>';
+            html += '<span style="font-size:1.6rem;font-weight:700;color:#27ae60;">' + data.timing.after_ms + ' ms</span>';
+            html += '</div>';
+
+            html += '</div>';
+
+            if (data.timing.improvement) {
+                html += '<p style="text-align:center;margin-top:12px;color:#555;">' +
+                    '<i class="fas fa-chart-line" style="color:#27ae60;"></i> ' +
+                    '<strong>' + data.timing.improvement + '</strong></p>';
+            }
+        }
+
+        /* Generic message */
+        if (data.message && !data.columns) {
+            html += '<div style="background:#eafaf1;color:#27ae60;padding:12px;border-radius:6px;">' +
+                '<i class="fas fa-check-circle"></i> ' + data.message + '</div>';
+        }
+
+        resultDiv.innerHTML = html || '<p style="color:#888;">No data returned.</p>';
+    })
+    .catch(err => {
+        resultDiv.innerHTML = '<div style="background:#fdecea;color:#c0392b;padding:12px;border-radius:6px;">' +
+            '<i class="fas fa-exclamation-triangle"></i> Fetch error: ' + err.message + '</div>';
+    });
+}
+</script>
+{% endblock %}

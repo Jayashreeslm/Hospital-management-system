@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Billing{% endblock %}
+
+{% block page_title %}Billing{% endblock %}
+
+{% block content %}
+<div class="search-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    <div class="filter-bar" style="display: flex; gap: 10px; align-items: center;">
+        <input type="text" id="searchInput" class="form-control" placeholder="Search bills..." onkeyup="filterTable()" style="max-width: 300px;">
+        <select id="statusFilter" class="form-control" onchange="filterTable()" style="max-width: 200px;">
+            <option value="All">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Paid">Paid</option>
+            <option value="Overdue">Overdue</option>
+        </select>
+    </div>
+    <button class="btn btn-primary" onclick="document.getElementById('addModal').style.display='flex'">
+        <i class="fas fa-plus"></i> Create Bill
+    </button>
+</div>
+
+{% if bills %}
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-file-invoice-dollar"></i> All Bills</h3>
+    </div>
+    <div class="card-body">
+        <table class="data-table" id="billTable">
+            <thead>
+                <tr>
+                    <th>Bill ID</th>
+                    <th>Patient Name</th>
+                    <th>Amount</th>
+                    <th>Bill Date</th>
+                    <th>Payment Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bills %}
+                <tr data-status="{{ b.Payment_Status }}">
+                    <td>{{ b.Bill_ID }}</td>
+                    <td>{{ b.patient_name }}</td>
+                    <td>₹{{ "%.2f"|format(b.Amount) }}</td>
+                    <td>{{ b.Bill_Date }}</td>
+                    <td>
+                        {% if b.Payment_Status == 'Paid' %}
+                            <span class="badge badge-success">Paid</span>
+                        {% elif b.Payment_Status == 'Pending' %}
+                            <span class="badge badge-warning">Pending</span>
+                        {% elif b.Payment_Status == 'Overdue' %}
+                            <span class="badge badge-danger">Overdue</span>
+                        {% else %}
+                            <span class="badge badge-info">{{ b.Payment_Status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form action="{{ url_for('update_bill_status', bill_id=b.Bill_ID) }}" method="POST" style="display: flex; gap: 5px; align-items: center;">
+                            <select name="payment_status" class="form-control" style="width: auto; min-width: 110px;">
+                                <option value="Pending" {% if b.Payment_Status == 'Pending' %}selected{% endif %}>Pending</option>
+                                <option value="Paid" {% if b.Payment_Status == 'Paid' %}selected{% endif %}>Paid</option>
+                                <option value="Overdue" {% if b.Payment_Status == 'Overdue' %}selected{% endif %}>Overdue</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="fas fa-sync-alt"></i> Update
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="fas fa-file-invoice-dollar" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
+    <h3>No Bills Found</h3>
+    <p>Click "Create Bill" to generate your first bill.</p>
+</div>
+{% endif %}
+
+<!-- Create Bill Modal -->
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus-circle"></i> Create Bill</h3>
+            <span class="close" onclick="document.getElementById('addModal').style.display='none'">&times;</span>
+        </div>
+        <form action="{{ url_for('add_bill') }}" method="POST">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="patient_id">Patient</label>
+                    <select id="patient_id" name="patient_id" class="form-control" required>
+                        <option value="">Select Patient</option>
+                        {% for p in patients %}
+                        <option value="{{ p.Patient_ID }}">{{ p.Patient_Name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="amount">Amount (₹)</label>
+                        <input type="number" id="amount" name="amount" class="form-control" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bill_date">Bill Date</label>
+                        <input type="date" id="bill_date" name="bill_date" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="payment_status">Payment Status</label>
+                    <select id="payment_status" name="payment_status" class="form-control" required>
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Overdue">Overdue</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="document.getElementById('addModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Create Bill</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function filterTable() {
+        var searchInput = document.getElementById("searchInput").value.toLowerCase();
+        var statusFilter = document.getElementById("statusFilter").value;
+        var rows = document.querySelectorAll("#billTable tbody tr");
+
+        rows.forEach(function(row) {
+            var text = row.textContent.toLowerCase();
+            var rowStatus = row.getAttribute("data-status");
+            var matchesSearch = text.includes(searchInput);
+            var matchesStatus = (statusFilter === "All") || (rowStatus === statusFilter);
+            row.style.display = (matchesSearch && matchesStatus) ? "" : "none";
+        });
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

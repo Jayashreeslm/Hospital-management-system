@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Transactions & ACID Properties{% endblock %}
+
+{% block page_title %}Transactions & ACID Properties{% endblock %}
+
+{% block content %}
+<!-- ═══════════ ACID PROPERTIES ═══════════ -->
+<div class="card" style="margin-bottom:28px;">
+    <div class="card-header">
+        <h3><i class="fas fa-shield-alt"></i> ACID Properties</h3>
+    </div>
+    <div class="card-body">
+        <p style="color:#555;margin-bottom:20px;">
+            Transactions are the backbone of reliable database operations. Every transaction in a relational DBMS
+            must satisfy the four <strong>ACID</strong> properties to guarantee data integrity.
+        </p>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;">
+            <!-- Atomicity -->
+            <div class="card" style="border-left:4px solid #e74c3c;">
+                <div class="card-body" style="text-align:center;">
+                    <i class="fas fa-atom" style="font-size:2.4rem;color:#e74c3c;"></i>
+                    <h4 style="margin:12px 0 6px;color:#2c3e50;">Atomicity</h4>
+                    <p style="font-size:0.9rem;color:#555;">
+                        A transaction is <em>all or nothing</em>. If any step fails, the entire transaction
+                        is rolled back so the database is never left in a partial state.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Consistency -->
+            <div class="card" style="border-left:4px solid #27ae60;">
+                <div class="card-body" style="text-align:center;">
+                    <i class="fas fa-balance-scale" style="font-size:2.4rem;color:#27ae60;"></i>
+                    <h4 style="margin:12px 0 6px;color:#2c3e50;">Consistency</h4>
+                    <p style="font-size:0.9rem;color:#555;">
+                        A transaction moves the database from one valid state to another.
+                        All integrity constraints, foreign keys, and rules remain satisfied.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Isolation -->
+            <div class="card" style="border-left:4px solid #3498db;">
+                <div class="card-body" style="text-align:center;">
+                    <i class="fas fa-user-shield" style="font-size:2.4rem;color:#3498db;"></i>
+                    <h4 style="margin:12px 0 6px;color:#2c3e50;">Isolation</h4>
+                    <p style="font-size:0.9rem;color:#555;">
+                        Concurrent transactions execute as if they were running sequentially.
+                        Intermediate states of one transaction are invisible to others.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Durability -->
+            <div class="card" style="border-left:4px solid #f39c12;">
+                <div class="card-body" style="text-align:center;">
+                    <i class="fas fa-hdd" style="font-size:2.4rem;color:#f39c12;"></i>
+                    <h4 style="margin:12px 0 6px;color:#2c3e50;">Durability</h4>
+                    <p style="font-size:0.9rem;color:#555;">
+                        Once a transaction is committed, its effects persist permanently — even
+                        if the system crashes immediately afterwards.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ LIVE DEMO ═══════════ -->
+<div class="card" style="margin-bottom:28px;">
+    <div class="card-header">
+        <h3><i class="fas fa-flask"></i> Live Transaction Demo</h3>
+    </div>
+    <div class="card-body">
+        <p style="color:#555;margin-bottom:18px;">
+            This demo creates an appointment inside an explicit <code>BEGIN … COMMIT</code> block.
+            Tick <em>"Force failure"</em> to simulate an error mid‑transaction and observe the automatic <strong>ROLLBACK</strong>.
+        </p>
+
+        <form id="txn-form">
+            <div class="form-row">
+                <div class="form-group" style="flex:1;min-width:200px;">
+                    <label for="patient_id"><i class="fas fa-user-injured"></i> Patient</label>
+                    <select name="patient_id" id="patient_id" class="form-control" required>
+                        <option value="">— select patient —</option>
+                        {% for p in patients %}
+                        <option value="{{ p.Patient_ID }}">{{ p.Name }} (ID {{ p.Patient_ID }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1;min-width:200px;">
+                    <label for="doctor_id"><i class="fas fa-user-md"></i> Doctor</label>
+                    <select name="doctor_id" id="doctor_id" class="form-control" required>
+                        <option value="">— select doctor —</option>
+                        {% for d in doctors %}
+                        <option value="{{ d.Doctor_ID }}">{{ d.Name }} — {{ d.Specialization }} (ID {{ d.Doctor_ID }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1;min-width:180px;">
+                    <label for="date"><i class="fas fa-calendar-day"></i> Date</label>
+                    <input type="date" name="date" id="date" class="form-control" required>
+                </div>
+                <div class="form-group" style="flex:1;min-width:140px;">
+                    <label for="time"><i class="fas fa-clock"></i> Time</label>
+                    <input type="time" name="time" id="time" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="checkbox" name="force_fail" value="1" style="width:18px;height:18px;">
+                    <span style="color:#c0392b;font-weight:600;">
+                        <i class="fas fa-exclamation-triangle"></i> Force failure (simulate rollback)
+                    </span>
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-play"></i> Run Transaction Demo
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Result Area -->
+<div id="transaction-result"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('txn-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const resultDiv = document.getElementById('transaction-result');
+    resultDiv.innerHTML = '<div class="card"><div class="card-body" style="text-align:center;color:#888;">' +
+        '<i class="fas fa-spinner fa-spin fa-2x"></i><p>Running transaction…</p></div></div>';
+
+    const formData = new FormData(this);
+
+    fetch('/transactions/demo', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            resultDiv.innerHTML = '<div class="card" style="border-left:4px solid #e74c3c;">' +
+                '<div class="card-body"><i class="fas fa-exclamation-triangle" style="color:#e74c3c;"></i> ' +
+                '<strong>Error:</strong> ' + data.error + '</div></div>';
+            return;
+        }
+
+        let html = '<div class="card"><div class="card-header"><h3><i class="fas fa-list-ol"></i> Transaction Steps</h3></div>';
+        html += '<div class="card-body">';
+
+        if (data.steps && data.steps.length) {
+            data.steps.forEach((step, idx) => {
+                let color = '#27ae60';
+                let icon = 'fa-check-circle';
+                if (step.status === 'error') {
+                    color = '#e74c3c';
+                    icon = 'fa-times-circle';
+                } else if (step.status === 'rollback') {
+                    color = '#e67e22';
+                    icon = 'fa-undo';
+                } else if (step.status === 'info') {
+                    color = '#3498db';
+                    icon = 'fa-info-circle';
+                }
+
+                html += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;' +
+                    (idx < data.steps.length - 1 ? 'border-bottom:1px solid #eee;' : '') + '">';
+                html += '<i class="fas ' + icon + '" style="color:' + color + ';font-size:1.3rem;margin-top:2px;"></i>';
+                html += '<div>';
+                html += '<strong style="color:' + color + ';">' + step.title + '</strong>';
+                if (step.detail) {
+                    html += '<p style="margin:4px 0 0;color:#555;font-size:0.9rem;">' + step.detail + '</p>';
+                }
+                if (step.sql) {
+                    html += '<pre style="background:#1e1e2e;color:#cdd6f4;padding:10px;border-radius:6px;margin-top:6px;font-size:0.82rem;overflow-x:auto;"><code>' + step.sql + '</code></pre>';
+                }
+                html += '</div></div>';
+            });
+        }
+
+        if (data.final_status) {
+            let badgeClass = data.final_status === 'committed' ? 'badge-success' : 'badge-danger';
+            html += '<div style="margin-top:18px;text-align:center;">';
+            html += '<span class="badge ' + badgeClass + '" style="font-size:1rem;padding:8px 20px;">' +
+                data.final_status.toUpperCase() + '</span>';
+            html += '</div>';
+        }
+
+        html += '</div></div>';
+        resultDiv.innerHTML = html;
+    })
+    .catch(err => {
+        resultDiv.innerHTML = '<div class="card" style="border-left:4px solid #e74c3c;">' +
+            '<div class="card-body"><i class="fas fa-exclamation-triangle" style="color:#e74c3c;"></i> ' +
+            'Fetch error: ' + err.message + '</div></div>';
+    });
+});
+
+// Default date to today
+document.getElementById('date').valueAsDate = new Date();
+</script>
+{% endblock %}

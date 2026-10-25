@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Management{% endblock %}
+
+{% block page_title %}Patient Management{% endblock %}
+
+{% block content %}
+<!-- Search and Filter Bar -->
+<div class="card">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('patients') }}" class="filter-bar">
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" name="search" class="form-control" placeholder="Search patients by name, phone, or ID..." value="{{ request.args.get('search', '') }}">
+                    </div>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <select name="gender" class="form-control">
+                        <option value="">All Genders</option>
+                        <option value="Male" {% if request.args.get('gender') == 'Male' %}selected{% endif %}>Male</option>
+                        <option value="Female" {% if request.args.get('gender') == 'Female' %}selected{% endif %}>Female</option>
+                        <option value="Other" {% if request.args.get('gender') == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Header with Add Button -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h3 style="margin: 0;"><i class="fas fa-users"></i> Patient List</h3>
+    <button class="btn btn-primary" onclick="document.getElementById('addPatientModal').style.display='flex'">
+        <i class="fas fa-plus"></i> Add Patient
+    </button>
+</div>
+
+<!-- Patients Table -->
+{% if patients %}
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Patient ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in patients %}
+                <tr>
+                    <td>{{ p.Patient_ID }}</td>
+                    <td>{{ p.Name }}</td>
+                    <td>{{ p.Age }}</td>
+                    <td>
+                        <span class="badge {% if p.Gender == 'Male' %}badge-info{% elif p.Gender == 'Female' %}badge-warning{% else %}badge-secondary{% endif %}">
+                            {{ p.Gender }}
+                        </span>
+                    </td>
+                    <td>{{ p.Phone }}</td>
+                    <td>{{ p.Address }}</td>
+                    <td>
+                        <a href="{{ url_for('view_patient', patient_id=p.Patient_ID) }}" class="btn btn-sm btn-primary" title="View">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <button class="btn btn-sm btn-warning" onclick="document.getElementById('editPatientModal{{ p.Patient_ID }}').style.display='flex'" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <form method="POST" action="{{ url_for('delete_patient', patient_id=p.Patient_ID) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this patient?')">
+                            <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <i class="fas fa-user-injured" style="font-size: 48px; color: #ccc; margin-bottom: 15px;"></i>
+            <h3>No Patients Found</h3>
+            <p>There are no patients matching your criteria. Click "Add Patient" to register a new patient.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Add Patient Modal -->
+<div class="modal" id="addPatientModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-plus"></i> Add New Patient</h3>
+            <span class="close" onclick="document.getElementById('addPatientModal').style.display='none'">&times;</span>
+        </div>
+        <form method="POST" action="{{ url_for('add_patient') }}">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" class="form-control" placeholder="Enter patient name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" class="form-control" placeholder="Age" min="0" max="150" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender" class="form-control" required>
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="text" id="phone" name="phone" class="form-control" placeholder="Enter phone number" required>
+                </div>
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <textarea id="address" name="address" class="form-control" rows="3" placeholder="Enter full address" required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('addPatientModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Patient</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Patient Modals (one per patient) -->
+{% for p in patients %}
+<div class="modal" id="editPatientModal{{ p.Patient_ID }}">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-edit"></i> Edit Patient</h3>
+            <span class="close" onclick="document.getElementById('editPatientModal{{ p.Patient_ID }}').style.display='none'">&times;</span>
+        </div>
+        <form method="POST" action="{{ url_for('edit_patient', patient_id=p.Patient_ID) }}">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="edit_name_{{ p.Patient_ID }}">Full Name</label>
+                    <input type="text" id="edit_name_{{ p.Patient_ID }}" name="name" class="form-control" value="{{ p.Name }}" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_age_{{ p.Patient_ID }}">Age</label>
+                        <input type="number" id="edit_age_{{ p.Patient_ID }}" name="age" class="form-control" value="{{ p.Age }}" min="0" max="150" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_gender_{{ p.Patient_ID }}">Gender</label>
+                        <select id="edit_gender_{{ p.Patient_ID }}" name="gender" class="form-control" required>
+                            <option value="Male" {% if p.Gender == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if p.Gender == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if p.Gender == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit_phone_{{ p.Patient_ID }}">Phone Number</label>
+                    <input type="text" id="edit_phone_{{ p.Patient_ID }}" name="phone" class="form-control" value="{{ p.Phone }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_address_{{ p.Patient_ID }}">Address</label>
+                    <textarea id="edit_address_{{ p.Patient_ID }}" name="address" class="form-control" rows="3" required>{{ p.Address }}</textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('editPatientModal{{ p.Patient_ID }}').style.display='none'">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Patient</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Close modal when clicking outside
+    document.querySelectorAll('.modal').forEach(function(modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}

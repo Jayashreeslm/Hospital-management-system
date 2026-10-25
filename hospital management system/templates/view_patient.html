@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Details - {{ patient.Name }}{% endblock %}
+
+{% block page_title %}Patient Details{% endblock %}
+
+{% block content %}
+<!-- Back Button -->
+<div style="margin-bottom: 20px;">
+    <a href="{{ url_for('patients') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Patients
+    </a>
+</div>
+
+<!-- Patient Info Card -->
+<div class="card" style="margin-bottom: 25px;">
+    <div class="card-header">
+        <h3><i class="fas fa-user"></i> {{ patient.Name }}</h3>
+        <span class="badge badge-info">ID: {{ patient.Patient_ID }}</span>
+    </div>
+    <div class="card-body">
+        <div class="form-row" style="gap: 30px;">
+            <div class="form-group" style="flex: 1;">
+                <p><strong><i class="fas fa-hashtag"></i> Patient ID:</strong> {{ patient.Patient_ID }}</p>
+                <p><strong><i class="fas fa-user"></i> Name:</strong> {{ patient.Name }}</p>
+                <p><strong><i class="fas fa-birthday-cake"></i> Age:</strong> {{ patient.Age }}</p>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <p><strong><i class="fas fa-venus-mars"></i> Gender:</strong>
+                    <span class="badge {% if patient.Gender == 'Male' %}badge-info{% elif patient.Gender == 'Female' %}badge-warning{% else %}badge-secondary{% endif %}">
+                        {{ patient.Gender }}
+                    </span>
+                </p>
+                <p><strong><i class="fas fa-phone"></i> Phone:</strong> {{ patient.Phone }}</p>
+                <p><strong><i class="fas fa-map-marker-alt"></i> Address:</strong> {{ patient.Address }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs Navigation -->
+<div style="display: flex; gap: 5px; margin-bottom: 0; border-bottom: 2px solid #e0e0e0;">
+    <button class="btn tab-btn active" onclick="openTab(event, 'appointments')" style="border-radius: 8px 8px 0 0;">
+        <i class="fas fa-calendar-check"></i> Appointments
+    </button>
+    <button class="btn tab-btn" onclick="openTab(event, 'records')" style="border-radius: 8px 8px 0 0;">
+        <i class="fas fa-file-medical"></i> Medical Records
+    </button>
+    <button class="btn tab-btn" onclick="openTab(event, 'bills')" style="border-radius: 8px 8px 0 0;">
+        <i class="fas fa-file-invoice-dollar"></i> Bills
+    </button>
+    <button class="btn tab-btn" onclick="openTab(event, 'insurance')" style="border-radius: 8px 8px 0 0;">
+        <i class="fas fa-shield-alt"></i> Insurance
+    </button>
+</div>
+
+<!-- Appointments Tab -->
+<div id="appointments" class="tab-content card" style="border-radius: 0 8px 8px 8px;">
+    <div class="card-header">
+        <h3><i class="fas fa-calendar-check"></i> Appointments</h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if appointments %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Appointment ID</th>
+                    <th>Doctor</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in appointments %}
+                <tr>
+                    <td>{{ a.Appointment_ID }}</td>
+                    <td>{{ a.Doctor_Name if a.Doctor_Name else a.Doctor_ID }}</td>
+                    <td>{{ a.Date }}</td>
+                    <td>{{ a.Time }}</td>
+                    <td>
+                        <span class="badge {% if a.Status == 'Completed' %}badge-success{% elif a.Status == 'Scheduled' %}badge-info{% elif a.Status == 'Cancelled' %}badge-danger{% else %}badge-warning{% endif %}">
+                            {{ a.Status }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state" style="padding: 30px;">
+            <i class="fas fa-calendar-times" style="font-size: 36px; color: #ccc; margin-bottom: 10px;"></i>
+            <p>No appointments found for this patient.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Medical Records Tab -->
+<div id="records" class="tab-content card" style="display: none; border-radius: 0 8px 8px 8px;">
+    <div class="card-header">
+        <h3><i class="fas fa-file-medical"></i> Medical Records</h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if records %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Record ID</th>
+                    <th>Diagnosis</th>
+                    <th>Treatment</th>
+                    <th>Date</th>
+                    <th>Doctor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td>{{ r.Record_ID }}</td>
+                    <td>{{ r.Diagnosis }}</td>
+                    <td>{{ r.Treatment }}</td>
+                    <td>{{ r.Date }}</td>
+                    <td>{{ r.Doctor_Name if r.Doctor_Name else r.Doctor_ID }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state" style="padding: 30px;">
+            <i class="fas fa-notes-medical" style="font-size: 36px; color: #ccc; margin-bottom: 10px;"></i>
+            <p>No medical records found for this patient.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bills Tab -->
+<div id="bills" class="tab-content card" style="display: none; border-radius: 0 8px 8px 8px;">
+    <div class="card-header">
+        <h3><i class="fas fa-file-invoice-dollar"></i> Bills</h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if bills %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Bill ID</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bills %}
+                <tr>
+                    <td>{{ b.Bill_ID }}</td>
+                    <td>{{ b.Date }}</td>
+                    <td>₹{{ b.Amount }}</td>
+                    <td>
+                        <span class="badge {% if b.Status == 'Paid' %}badge-success{% elif b.Status == 'Pending' %}badge-warning{% else %}badge-danger{% endif %}">
+                            {{ b.Status }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state" style="padding: 30px;">
+            <i class="fas fa-receipt" style="font-size: 36px; color: #ccc; margin-bottom: 10px;"></i>
+            <p>No bills found for this patient.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Insurance Tab -->
+<div id="insurance" class="tab-content card" style="display: none; border-radius: 0 8px 8px 8px;">
+    <div class="card-header">
+        <h3><i class="fas fa-shield-alt"></i> Insurance</h3>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        {% if insurance %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Insurance ID</th>
+                    <th>Provider</th>
+                    <th>Policy Number</th>
+                    <th>Coverage Amount</th>
+                    <th>Expiry Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in insurance %}
+                <tr>
+                    <td>{{ i.Insurance_ID }}</td>
+                    <td>{{ i.Provider }}</td>
+                    <td>{{ i.Policy_Number }}</td>
+                    <td>₹{{ i.Coverage_Amount }}</td>
+                    <td>{{ i.Expiry_Date }}</td>
+                    <td>
+                        <span class="badge {% if i.Status == 'Active' %}badge-success{% elif i.Status == 'Expired' %}badge-danger{% else %}badge-warning{% endif %}">
+                            {{ i.Status }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state" style="padding: 30px;">
+            <i class="fas fa-shield-alt" style="font-size: 36px; color: #ccc; margin-bottom: 10px;"></i>
+            <p>No insurance records found for this patient.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openTab(evt, tabName) {
+        // Hide all tab content
+        document.querySelectorAll('.tab-content').forEach(function(el) {
+            el.style.display = 'none';
+        });
+
+        // Remove active class from all tab buttons
+        document.querySelectorAll('.tab-btn').forEach(function(el) {
+            el.classList.remove('active');
+        });
+
+        // Show selected tab and mark button active
+        document.getElementById(tabName).style.display = 'block';
+        evt.currentTarget.classList.add('active');
+    }
+</script>
+<style>
+    .tab-btn {
+        background: #e9ecef;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        color: #555;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    .tab-btn:hover {
+        background: #dee2e6;
+    }
+    .tab-btn.active {
+        background: #fff;
+        color: #4361ee;
+        border-bottom: 2px solid #4361ee;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
